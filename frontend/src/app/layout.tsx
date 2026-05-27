@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
 import { SessionContextProvider } from "@/components/providers";
-import { cookies } from "next/headers";
-
 export const metadata: Metadata = {
   title: "Hermes Agent SaaS",
   description: "Multi-user AI Agent Platform powered by hermes-agent",
