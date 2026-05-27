@@ -6,12 +6,16 @@ import os
 import sys
 
 # Add the repo root directory to the path (parent of backend and api)
-sys.path.insert(0, os.path.dirname(__file__))
+# __file__ = hermes-agent-saas/api/index.py
+# dirname(__file__) = hermes-agent-saas/api
+# dirname(dirname(__file__)) = hermes-agent-saas (repo root)
+REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, REPO_ROOT)
 
 # Set environment variables from Vercel if not already set
 # This ensures os.getenv() in config.py works correctly
 if 'SUPABASE_URL' not in os.environ:
-    os.environ['SUPABASE_URL'] = os.getenv('SUPABASE_URL', '')
+    os.environ['SUPABASE_URL'] = os.getenv('SUPABASE_URL', 'https://rtwwnxipchwgwegtjqco.supabase.co')
 if 'SUPABASE_ANON_KEY' not in os.environ:
     os.environ['SUPABASE_ANON_KEY'] = os.getenv('SUPABASE_ANON_KEY', '')
 if 'SUPABASE_SERVICE_ROLE_KEY' not in os.environ:
