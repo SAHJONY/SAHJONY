@@ -6,7 +6,7 @@ import os
 import sys
 
 # Add the backend directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'hermes-agent-saas', 'backend'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
