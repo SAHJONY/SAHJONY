@@ -1,6 +1,6 @@
 """
 Vercel Python Serverless Function wrapper for FastAPI backend
-This bridges the FastAPI app to Vercel's serverless environment
+Exports a top-level 'handler' function that Vercel expects
 """
 import os
 import sys
@@ -16,71 +16,77 @@ os.environ.setdefault('JWT_SECRET', 'dev-secret-change-in-production')
 
 # Import the FastAPI app from main
 try:
-    # Import as package to ensure relative imports work
     import backend
     import backend.main as main_module
     app = main_module.app
 except Exception as e:
-    # If import fails, create a minimal app
+    # If import fails, create a minimal app for error reporting
     from fastapi import FastAPI
     app = FastAPI(title="SAHJONY Backend - Error")
     
     @app.get("/")
     async def error_root():
-        return {
-            "status": "error", 
-            "message": "Failed to load backend module", 
-            "error": str(e)
-        }
+        return {"status": "error", "message": "Failed to load backend module", "error": str(e)}
     
     @app.get("/health")
     async def error_health():
         return {"status": "error", "message": str(e)}
 
-# Vercel Python serverless handler
-def handler(event, context):
+# Vercel Python serverless handler - must be top-level async function
+async def handler(event, context):
     """Handle Vercel serverless request and return FastAPI response."""
     from fastapi.requests import Request
-    from fastapi.responses import JSONResponse
     
-    # Build the request object from Vercel event
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '/')
     headers = event.get('headers', {})
     body = event.get('body', '')
     
-    # Create a mock Request object for FastAPI
+    # Normalize headers to lowercase keys
+    normalized_headers = {}
+    for k, v in headers.items():
+        normalized_headers[k.lower()] = v
+    
+    # Build ASGI scope
     scope = {
         'type': 'http',
         'method': method,
         'path': path,
-        'headers': [(k.lower().encode(), v.encode()) for k, v in headers.items()],
+        'headers': [(k.lower().encode(), v.encode()) for k, v in normalized_headers.items()],
         'query_string': b'',
         'root_path': '',
+        'server': ('vercel', 443) if event.get('headers', {}).get('host') else ('localhost', 8000),
     }
     
+    # Create receive function
     async def receive():
         return {'type': 'http.request', 'body': body.encode() if body else b''}
     
-    request = Request(scope, receive)
+    # Collect response parts
+    response_started = False
+    status_code = 200
+    response_headers = []
+    response_body = b''
     
-    # Call FastAPI app
-    response = app.handle(request)
+    async def send(message):
+        nonlocal response_started, status_code, response_headers, response_body
+        if message['type'] == 'http.response.start':
+            response_started = True
+            status_code = message['status']
+            response_headers = message.get('headers', [])
+        elif message['type'] == 'http.response.body':
+            response_body += message.get('body', b'')
     
-    # Convert FastAPI response to Vercel format
-    async def run_response():
-        await response.body_consumed
-        body_bytes = response.body
-        return {
-            'statusCode': response.status_code,
-            'headers': {k: v for k, v in response.headers.items()},
-            'body': body_bytes.decode() if body_bytes else ''
-        }
+    # Call FastAPI ASGI app
+    await app(scope, receive, send)
     
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(run_response())
-    loop.close()
+    # Convert headers to dict
+    headers_dict = {}
+    for key, value in response_headers:
+        headers_dict[key.decode()] = value.decode()
     
-    return result
+    return {
+        'statusCode': status_code,
+        'headers': headers_dict,
+        'body': response_body.decode() if response_body else ''
+    }
