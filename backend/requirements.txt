@@ -8,10 +8,8 @@ pydantic-settings>=2.0.0
 # HTTP client
 httpx>=0.25.0
 
-# Supabase - use compatible versions
+# Supabase - let it manage its own dependency versions
 supabase>=2.0.0
-postgrest-python>=0.10.0
-gotrue-python>=1.0.0
 
 # Utilities
 python-dotenv>=1.0.0
