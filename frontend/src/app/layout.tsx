@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { createClient } from "@/lib/supabase/client";
+import { createServerClient } from "@/lib/supabase/server";
 import { SessionContextProvider } from "@/components/providers";
+import { cookies } from "next/headers";
 
 export const metadata: Metadata = {
   title: "Hermes Agent SaaS",
@@ -11,12 +12,12 @@ export const metadata: Metadata = {
 // Force dynamic rendering to avoid SSR pre-rendering issues with Supabase
 export const dynamic = 'force-dynamic';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
+  const supabase = await createServerClient();
 
   return (
     <html lang="en" className="dark">
