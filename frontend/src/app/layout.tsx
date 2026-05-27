@@ -15,7 +15,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
+  let supabase = null;
+  try {
+    supabase = await createClient();
+  } catch (e) {
+    console.error('Failed to create Supabase client:', e);
+  }
 
   return (
     <html lang="en" className="dark">
