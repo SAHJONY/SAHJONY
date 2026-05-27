@@ -13,19 +13,11 @@ REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, REPO_ROOT)
 
 # Set environment variables from Vercel if not already set
-# This ensures os.getenv() in config.py works correctly
-if 'SUPABASE_URL' not in os.environ:
-    os.environ['SUPABASE_URL'] = os.getenv('SUPABASE_URL', 'https://rtwwnxipchwgwegtjqco.supabase.co')
-if 'SUPABASE_ANON_KEY' not in os.environ:
-    os.environ['SUPABASE_ANON_KEY'] = os.getenv('SUPABASE_ANON_KEY', '')
-if 'SUPABASE_SERVICE_ROLE_KEY' not in os.environ:
-    os.environ['SUPABASE_SERVICE_ROLE_KEY'] = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
-if 'JWT_SECRET' not in os.environ:
-    os.environ['JWT_SECRET'] = os.getenv('JWT_SECRET', 'dev-secret-change-in-production')
-if 'FRONTEND_URL' not in os.environ:
-    os.environ['FRONTEND_URL'] = os.getenv('FRONTEND_URL', 'https://frontend-ten-pi-73.vercel.app')
-if 'DEBUG' not in os.environ:
-    os.environ['DEBUG'] = 'false'
+# Only set from Vercel env vars - don't override with empty defaults
+os.environ.setdefault('SUPABASE_URL', 'https://rtwwnxipchwgwegtjqco.supabase.co')
+os.environ.setdefault('FRONTEND_URL', 'https://frontend-ten-pi-73.vercel.app')
+os.environ.setdefault('DEBUG', 'false')
+os.environ.setdefault('JWT_SECRET', 'dev-secret-change-in-production')
 
 # Import the FastAPI app from main
 try:
