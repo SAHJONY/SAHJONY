@@ -1,6 +1,6 @@
 """
 Vercel Python Serverless Function wrapper for FastAPI backend
-Exports a top-level 'handler' function that Vercel expects
+Vercel expects either 'app' (ASGI app) or 'handler' (function) at top level
 """
 import os
 import sys
@@ -32,11 +32,9 @@ except Exception as e:
     async def error_health():
         return {"status": "error", "message": str(e)}
 
-# Vercel Python serverless handler - must be top-level async function
+# Also export handler for Vercel serverless events
 async def handler(event, context):
     """Handle Vercel serverless request and return FastAPI response."""
-    from fastapi.requests import Request
-    
     method = event.get('httpMethod', 'GET')
     path = event.get('path', '/')
     headers = event.get('headers', {})
@@ -55,7 +53,6 @@ async def handler(event, context):
         'headers': [(k.lower().encode(), v.encode()) for k, v in normalized_headers.items()],
         'query_string': b'',
         'root_path': '',
-        'server': ('vercel', 443) if event.get('headers', {}).get('host') else ('localhost', 8000),
     }
     
     # Create receive function
@@ -63,15 +60,13 @@ async def handler(event, context):
         return {'type': 'http.request', 'body': body.encode() if body else b''}
     
     # Collect response parts
-    response_started = False
     status_code = 200
     response_headers = []
     response_body = b''
     
     async def send(message):
-        nonlocal response_started, status_code, response_headers, response_body
+        nonlocal status_code, response_headers, response_body
         if message['type'] == 'http.response.start':
-            response_started = True
             status_code = message['status']
             response_headers = message.get('headers', [])
         elif message['type'] == 'http.response.body':
