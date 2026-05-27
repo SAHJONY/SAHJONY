@@ -1,0 +1,19 @@
+{
+  "type": "web_service",
+  "name": "sahjony-backend",
+  "repo": {
+    "url": "https://github.com/SAHJONY/SAHJONY",
+    "branch": "master"
+  },
+  "runtime": "python",
+  "pythonVersion": "3.11",
+  "buildCommand": "pip install -r requirements.txt",
+  "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
+  "healthCheckPath": "/health",
+  "envVars": [
+    {"key": "PYTHON_VERSION", "value": "3.11"},
+    {"key": "DEBUG", "value": "false"},
+    {"key": "SUPABASE_URL", "value": "https://rtwwnxipchwgwegtjqco.supabase.co"},
+    {"key": "FRONTEND_URL", "value": "https://frontend-ten-pi-73.vercel.app"}
+  ]
+}
