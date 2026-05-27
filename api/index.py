@@ -21,6 +21,9 @@ os.environ.setdefault('JWT_SECRET', 'dev-secret-change-in-production')
 
 # Import the FastAPI app from main
 try:
+    # First import the backend package to initialize it
+    import backend
+    # Then import main (which uses relative imports from .config, .routes)
     import backend.main as main_module
     app = main_module.app
     
