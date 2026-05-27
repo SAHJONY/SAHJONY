@@ -1,18 +1,12 @@
-[ Railways Deployment Configuration
+[ Railway Deployment Configuration
  Docs: https://docs.railway.app/reference/config
 
 [build]
-builder = "python"
-builderVersion = "4"
+command = "pip install -r requirements.txt"
 
 [deploy]
 startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
 healthCheckPath = "/health"
-waitForPortSeconds = 30
 
-[runtime]
+[settings]
 pythonVersion = "3.11"
-
-[environment]
-# Platform will inject PORT variable
-# Add your own environment variables in Railway dashboard
