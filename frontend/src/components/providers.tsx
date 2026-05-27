@@ -29,24 +29,34 @@ export function SessionContextProvider({
   supabase,
 }: {
   children: React.ReactNode;
-  supabase: SupabaseClient<Database>;
+  supabase: SupabaseClient<Database> | null;
 }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // If supabase is null (not configured), just set loading to false
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const { data: profileData } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-        setProfile(profileData);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const { data: profileData } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+          setProfile(profileData);
+        }
+      } catch (e) {
+        console.error('Error fetching session:', e);
       }
       setIsLoading(false);
     };
@@ -73,6 +83,7 @@ export function SessionContextProvider({
   }, [supabase]);
 
   const signOut = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     setUser(null);
     setProfile(null);

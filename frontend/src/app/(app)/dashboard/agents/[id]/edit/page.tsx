@@ -17,6 +17,25 @@ export default function EditAgentPage() {
   const agentId = params.id as string
 
   useEffect(() => {
+    if (!supabase) {
+      // Mock data for demo when Supabase not configured
+      setAgent({
+        id: agentId,
+        user_id: 'demo-user',
+        name: 'Demo Agent',
+        description: 'This is a demo agent',
+        model_provider: 'openai',
+        model_name: 'gpt-4o',
+        system_prompt: 'You are a helpful assistant.',
+        config: {},
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      setLoading(false)
+      return
+    }
+
     const fetchAgent = async () => {
       const { data, error } = await supabase
         .from('agents')
@@ -43,6 +62,12 @@ export default function EditAgentPage() {
   }) => {
     setSubmitting(true)
     setError('')
+
+    if (!supabase) {
+      alert('Supabase not configured')
+      setSubmitting(false)
+      return
+    }
 
     try {
       const { error } = await supabase

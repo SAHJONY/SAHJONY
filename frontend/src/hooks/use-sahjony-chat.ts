@@ -31,6 +31,11 @@ export function useSahjonyChat({
   const supabase = createClient()
 
   const connect = useCallback(async () => {
+    if (!supabase) {
+      onError?.('Supabase not configured')
+      return
+    }
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       onError?.('Not authenticated')

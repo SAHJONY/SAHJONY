@@ -29,23 +29,32 @@ export default function ConversationsPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     const fetchConversations = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
 
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*, agents(name)')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false })
+        const { data, error } = await supabase
+          .from('conversations')
+          .select('*, agents(name)')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
 
-      if (error) {
-        setError('Failed to load conversations')
-      } else if (data) {
-        setConversations(data)
+        if (error) {
+          setError('Failed to load conversations')
+        } else if (data) {
+          setConversations(data)
+        }
+      } catch (e) {
+        setError('An error occurred')
       }
       setLoading(false)
     }
@@ -53,6 +62,7 @@ export default function ConversationsPage() {
   }, [supabase, router])
 
   const handleDelete = useCallback(async (id: string) => {
+    if (!supabase) return
     if (!confirm('Delete this conversation?')) return
     
     const { error } = await supabase.from('conversations').delete().eq('id', id)

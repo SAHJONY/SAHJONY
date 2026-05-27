@@ -18,6 +18,12 @@ export default function NewAgentPage() {
     model_name: string
     system_prompt: string
   }) => {
+    if (!supabase) {
+      setError('Supabase is not configured. Please add your Supabase credentials.')
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     setError('')
 

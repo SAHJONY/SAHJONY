@@ -216,6 +216,8 @@ export async function updateConversationAgentType(
   conversationId: string,
   agentType: SahjonyAgentType
 ): Promise<boolean> {
+  if (!supabase) return false
+
   const { error } = await supabase
     .from('conversations')
     .update({ 

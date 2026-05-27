@@ -20,6 +20,12 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
+    if (!supabase) {
+      setError('Supabase is not configured. Please add your Supabase credentials.')
+      setLoading(false)
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -40,6 +46,11 @@ export default function LoginPage() {
   }
 
   const handleOAuthLogin = async (provider: 'google' | 'github') => {
+    if (!supabase) {
+      setError('Supabase is not configured. Please add your Supabase credentials.')
+      return
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,

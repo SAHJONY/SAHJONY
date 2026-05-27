@@ -59,12 +59,18 @@ export default function ChatPage() {
 
   // Fetch conversation, agent, and messages
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+          return
+        }
 
       // Get conversation
       const { data: conv } = await supabase
@@ -107,7 +113,9 @@ export default function ChatPage() {
       if (msgs) {
         setMessages(msgs)
       }
-
+      } catch (e) {
+        console.error('Error fetching data:', e)
+      }
       setLoading(false)
     }
 

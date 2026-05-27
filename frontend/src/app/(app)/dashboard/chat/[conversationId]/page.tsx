@@ -24,6 +24,11 @@ export default function ChatPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     const fetchData = async () => {
       const { data: conv, error: convError } = await supabase
         .from('conversations')
@@ -51,6 +56,8 @@ export default function ChatPage() {
   }, [conversationId, supabase])
 
   const handleSendMessage = async (content: string) => {
+    if (!supabase) return
+
     const userMessage: Message = {
       id: `temp-${Date.now()}`,
       conversation_id: conversationId,
@@ -119,6 +126,8 @@ export default function ChatPage() {
   }
 
   const saveAssistantMessage = async (content: string) => {
+    if (!supabase) return
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user || !content.trim()) return
 

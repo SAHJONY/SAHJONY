@@ -13,6 +13,11 @@ export default function DashboardPage() {
   const supabase = createClient()
 
   useEffect(() => {
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     const fetchAgents = async () => {
       const { data, error } = await supabase
         .from('agents')
@@ -25,7 +30,7 @@ export default function DashboardPage() {
       setLoading(false)
     }
     fetchAgents()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="space-y-8">

@@ -13,9 +13,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
 
   useEffect(() => {
+    // If supabase is null, skip auth check (for demo/development)
+    if (!supabase) {
+      setLoading(false)
+      return
+    }
+
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login')
+        }
+      } catch (e) {
+        console.error('Auth error:', e)
         router.push('/login')
       }
       setLoading(false)

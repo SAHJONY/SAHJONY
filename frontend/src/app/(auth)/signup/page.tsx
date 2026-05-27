@@ -20,6 +20,11 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
 
+    if (!supabase) {
+      setError('Authentication service not configured. Please contact support.')
+      return
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
