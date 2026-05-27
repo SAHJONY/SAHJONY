@@ -1,11 +1,10 @@
 """
 Vercel Python Serverless Function wrapper for FastAPI backend
-Imports components directly to avoid relative import issues
 """
 import os
 import sys
 
-# Add this directory to path so 'from app.config' works (on Vercel we're in the backend dir)
+# Add this directory to path
 sys.path.insert(0, os.path.dirname(__file__))
 
 # Set environment variables from Vercel
@@ -13,49 +12,52 @@ SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://rtwwnxipchwgwegtjqco.supabase.
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://frontend-ten-pi-73.vercel.app')
 DEBUG = os.getenv('DEBUG', 'false')
 JWT_SECRET = os.getenv('JWT_SECRET', 'dev-secret-change-in-production')
+SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
+SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
 
 os.environ['SUPABASE_URL'] = SUPABASE_URL
 os.environ['FRONTEND_URL'] = FRONTEND_URL
 os.environ['DEBUG'] = DEBUG
 os.environ['JWT_SECRET'] = JWT_SECRET
+os.environ['SUPABASE_ANON_KEY'] = SUPABASE_ANON_KEY
+os.environ['SUPABASE_SERVICE_ROLE_KEY'] = SUPABASE_SERVICE_ROLE_KEY
 
-# Import FastAPI and create app
+# Import FastAPI
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 
-# Try importing from app directly (not backend.app since we're already in backend/)
-import sys
-import os
+# Try importing from app
+HAS_FULL_BACKEND = False
+app_components = {}
+
 try:
     from app.config import settings
-    from app.routes import (
-        auth_router, agents_router, conversations_router,
-        chat_router, keys_router, support_router, admin_router, twenty_router
-    )
+    app_components['config'] = settings
     HAS_FULL_BACKEND = True
-    sys.stderr.write(f"DEBUG: Successfully loaded backend\n")
 except Exception as e:
-    HAS_FULL_BACKEND = False
-    settings = None
-    sys.stderr.write(f"DEBUG: Import failed: {type(e).__name__}: {e}\n")
-    sys.stderr.write(f"DEBUG: __file__ = {__file__}\n")
-    sys.stderr.write(f"DEBUG: sys.path = {sys.path}\n")
+    sys.stderr.write(f"Config import failed: {type(e).__name__}: {e}\n")
+    from app.config import Settings
+    settings = Settings()
+    app_components['config'] = settings
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    if HAS_FULL_BACKEND:
-        print("Starting Hermes Agent SaaS Backend")
-        print(f"Supabase URL: {SUPABASE_URL[:20]}...")
-    yield
-    print("Shutting down backend")
+# Try importing routers individually
+router_names = ['auth', 'agents', 'conversations', 'chat', 'keys', 'support', 'admin', 'twenty']
+loaded_routers = []
+
+if HAS_FULL_BACKEND:
+    for name in router_names:
+        try:
+            from app.routes import globals()[f'{name}_router']
+            loaded_routers.append(globals()[f'{name}_router'])
+            sys.stderr.write(f"Loaded router: {name}\n")
+        except Exception as e:
+            sys.stderr.write(f"Router {name} failed: {type(e).__name__}: {e}\n")
 
 # Create FastAPI app
 app = FastAPI(
     title="Hermes Agent SaaS API",
-    description="Multi-user AI Agent Platform",
+    description="Multi-user AI Agent Platform" if HAS_FULL_BACKEND else "Backend deployment in progress",
     version="0.1.0",
-    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -71,33 +73,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers if available
-if HAS_FULL_BACKEND:
-    app.include_router(auth_router, prefix="/api")
-    app.include_router(agents_router, prefix="/api")
-    app.include_router(conversations_router, prefix="/api")
-    app.include_router(chat_router, prefix="/api")
-    app.include_router(keys_router, prefix="/api")
-    app.include_router(support_router, prefix="/api")
-    app.include_router(admin_router, prefix="/api")
-    app.include_router(twenty_router, prefix="/api")
+# Include routers if loaded
+for router in loaded_routers:
+    app.include_router(router, prefix="/api")
 
 @app.get("/")
 async def root():
-    if HAS_FULL_BACKEND:
-        return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy"}
-    return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy", "mode": "minimal"}
+    return {
+        "service": "hermes-agent-saas",
+        "version": "0.1.0",
+        "status": "healthy",
+        "mode": "full" if HAS_FULL_BACKEND else "setup",
+        "routers_loaded": len(loaded_routers),
+    }
 
 @app.get("/health")
 async def health():
-    if HAS_FULL_BACKEND:
-        return {"status": "healthy", "components": {"api": "healthy", "backend": "full"}}
-    return {"status": "healthy", "components": {"api": "healthy", "backend": "minimal"}}
+    return {
+        "status": "healthy" if HAS_FULL_BACKEND else "degraded",
+        "mode": "full" if HAS_FULL_BACKEND else "setup",
+        "components": {
+            "api": "healthy",
+            "database": "configured" if SUPABASE_URL else "missing"
+        }
+    }
 
 @app.get("/api")
 async def api_info():
     return {
         "name": "Hermes Agent SaaS API",
         "version": "0.1.0",
-        "endpoints": ["/api/auth", "/api/agents", "/api/conversations", "/api/chat"]
+        "status": "operational" if HAS_FULL_BACKEND else "setup_required",
+        "endpoints": ["/api/auth", "/api/agents", "/api/conversations", "/api/chat", "/api/keys", "/api/support", "/api/admin", "/api/twenty"] if HAS_FULL_BACKEND else [],
+        "frontend_url": FRONTEND_URL,
     }
