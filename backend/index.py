@@ -5,8 +5,8 @@ Imports components directly to avoid relative import issues
 import os
 import sys
 
-# Add this directory to the path
-sys.path.insert(0, os.path.dirname(__file__))
+# Add parent directory (hermes-agent-saas) to path so 'from backend.app.config' works
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 # Set environment variables from Vercel
 SUPABASE_URL = os.getenv('SUPABASE_URL', 'https://rtwwnxipchwgwegtjqco.supabase.co')
