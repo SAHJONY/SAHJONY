@@ -5,8 +5,7 @@ Imports components directly to avoid relative import issues
 import os
 import sys
 
-# Add this directory to path so 'from backend.app.config' works
-# On Vercel, __file__ = /var/task/index.py, so dirname gives /var/task
+# Add this directory to path so 'from app.config' works (on Vercel we're in the backend dir)
 sys.path.insert(0, os.path.dirname(__file__))
 
 # Set environment variables from Vercel
@@ -25,23 +24,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-# Try importing from backend.app directly
+# Try importing from app directly (not backend.app since we're already in backend/)
 import sys
+import os
 try:
-    from backend.app.config import settings
-    from backend.app.routes import (
+    from app.config import settings
+    from app.routes import (
         auth_router, agents_router, conversations_router,
         chat_router, keys_router, support_router, admin_router, twenty_router
     )
     HAS_FULL_BACKEND = True
-    sys.stderr.write(f"DEBUG: Successfully loaded backend routers\n")
+    sys.stderr.write(f"DEBUG: Successfully loaded backend\n")
 except Exception as e:
     HAS_FULL_BACKEND = False
     settings = None
-    import os
     sys.stderr.write(f"DEBUG: Import failed: {type(e).__name__}: {e}\n")
     sys.stderr.write(f"DEBUG: __file__ = {__file__}\n")
-    sys.stderr.write(f"DEBUG: os.path.dirname(__file__) = {os.path.dirname(__file__)}\n")
     sys.stderr.write(f"DEBUG: sys.path = {sys.path}\n")
 
 @asynccontextmanager
