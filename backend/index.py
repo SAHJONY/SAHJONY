@@ -94,9 +94,9 @@ async def signup(request: SignUpRequest):
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
     try:
+        # Use the newer supabase API format
         auth_response = supabase_admin.auth.sign_up(
-            credentials={"email": request.email, "password": request.password},
-            options={"data": {"display_name": request.display_name or request.email.split("@")[0]}}
+            {"email": request.email, "password": request.password}
         )
         
         if not auth_response.user:
