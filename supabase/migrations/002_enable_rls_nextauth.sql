@@ -15,34 +15,18 @@ ALTER TABLE public."Session" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."VerificationToken" ENABLE ROW LEVEL SECURITY;
 
 -- Policies for public.User table
--- Users can view and update their own profile
-CREATE POLICY "Users can view own user" ON public."User"
-    FOR SELECT USING (auth.uid() = "id");
-
-CREATE POLICY "Users can update own user" ON public."User"
-    FOR UPDATE USING (auth.uid() = "id");
+-- Users can view and update their own profileCREATE POLICY "Users can view own user" ON public."User" FOR SELECT USING (auth.uid() = "id"::uuid);
+CREATE POLICY "Users can update own user" ON public."User" FOR UPDATE USING (auth.uid() = "id"::uuid);
 
 -- Policies for public.Account table (NextAuth OAuth accounts)
--- Users can view, insert, update, delete their own OAuth accounts
-CREATE POLICY "Users can view own accounts" ON public."Account"
-    FOR SELECT USING (auth.uid() = "userId");
-
-CREATE POLICY "Users can insert own accounts" ON public."Account"
-    FOR INSERT WITH CHECK (auth.uid() = "userId");
-
-CREATE POLICY "Users can update own accounts" ON public."Account"
-    FOR UPDATE USING (auth.uid() = "userId");
-
-CREATE POLICY "Users can delete own accounts" ON public."Account"
-    FOR DELETE USING (auth.uid() = "userId");
+-- Users can view, insert, update, delete their own OAuth accountsCREATE POLICY "Users can view own accounts" ON public."Account" FOR SELECT USING (auth.uid() = "userId"::uuid);
+CREATE POLICY "Users can insert own accounts" ON public."Account" FOR INSERT WITH CHECK (auth.uid() = "userId"::uuid);
+CREATE POLICY "Users can update own accounts" ON public."Account" FOR UPDATE USING (auth.uid() = "userId"::uuid);
+CREATE POLICY "Users can delete own accounts" ON public."Account" FOR DELETE USING (auth.uid() = "userId"::uuid);
 
 -- Policies for public.Session table
--- Users can view and delete their own sessions
-CREATE POLICY "Users can view own sessions" ON public."Session"
-    FOR SELECT USING (auth.uid() = "userId");
-
-CREATE POLICY "Users can delete own sessions" ON public."Session"
-    FOR DELETE USING (auth.uid() = "userId");
+-- Users can view and delete their own sessionsCREATE POLICY "Users can view own sessions" ON public."Session" FOR SELECT USING (auth.uid() = "userId"::uuid);
+CREATE POLICY "Users can delete own sessions" ON public."Session" FOR DELETE USING (auth.uid() = "userId"::uuid);
 
 -- Policies for public.VerificationToken table
 -- Verification tokens are publicly readable (needed for email verification flow)
