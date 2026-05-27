@@ -1,12 +1,12 @@
-# Hermes Agent SaaS - Technical Specification
+# SAHJONY - Technical Specification
 
 ## Overview
 
 Build a **multi-user AI Agent SaaS platform** using:
-- **Backend**: FastAPI service layer wrapping hermes-agent with REST API + WebSocket streaming
+- **Backend**: FastAPI service layer wrapping SAHJONY with REST API + WebSocket streaming
 - **Frontend**: Next.js 15 with modern web UI
 - **Database**: Supabase (PostgreSQL + Auth + RLS)
-- **Agent Engine**: hermes-agent as the core AI processing engine
+- **Agent Engine**: SAHJONY as the core AI processing engine
 
 ## Architecture
 
@@ -35,8 +35,8 @@ Build a **multi-user AI Agent SaaS platform** using:
          ┌────────────┼────────────┐
          │            │            │
     ┌────▼────┐  ┌────▼────┐  ┌────▼────┐
-    │ Supabase│  │ hermes- │  │ OpenAI  │
-    │ Postgres│  │ agent   │  │ / Anthropic │
+    │ Supabase│  │ SAHJONY │  │ OpenAI  │
+    │ Postgres│  │ Engine  │  │ / Anthropic │
     │ + Auth  │  │ Engine  │  │ APIs    │
     └─────────┘  └─────────┘  └─────────┘
 ```
@@ -173,7 +173,7 @@ DELETE /api/keys/:id           - Revoke API key
 
 ### Backend
 - **Python 3.11+** with FastAPI
-- **hermes-agent** as the core agent engine
+- **SAHJONY** as the core agent engine
 - **Supabase Python client** for database access
 - **SQLAlchemy** for ORM
 - **WebSocket** for real-time streaming
@@ -188,7 +188,7 @@ DELETE /api/keys/:id           - Revoke API key
 ### Infrastructure
 - **Supabase** for PostgreSQL + Auth
 - **Vercel** for frontend deployment
-- **hermes-agent** running as the AI engine
+- **SAHJONY** running as the AI engine
 
 ## Project Structure
 
@@ -218,7 +218,7 @@ hermes-agent-saas/
 │   │   │   ├── __init__.py
 │   │   │   ├── agent_service.py
 │   │   │   ├── chat_service.py
-│   │   │   └── hermes_engine.py
+│   │   │   └── sahjony_engine.py
 │   │   └── middleware/
 │   │       ├── __init__.py
 │   │       └── auth.py
@@ -237,7 +237,7 @@ hermes-agent-saas/
 
 ## Implementation Notes
 
-1. **hermes-agent Integration**: The FastAPI backend will use hermes-agent as a library/dependency, calling into its agent runtime to process messages while maintaining proper session isolation per user/conversation.
+1. **SAHJONY Integration**: The FastAPI backend will use SAHJONY as a library/dependency, calling into its agent runtime to process messages while maintaining proper session isolation per user/conversation.
 
 2. **Streaming Response**: Use Server-Sent Events (SSE) or WebSocket for streaming AI responses to provide real-time feedback.
 

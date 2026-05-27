@@ -33,7 +33,7 @@ try:
 except Exception as e:
     # If import fails, create a minimal app that shows the error
     from fastapi import FastAPI
-    app = FastAPI(title="SAHJONY Backend - Error")
+    app = FastAPI(title="SAHJONY API")
     
     @app.get("/")
     async def error_root():

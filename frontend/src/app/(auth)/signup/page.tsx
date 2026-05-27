@@ -63,8 +63,8 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Hermes Agent</h1>
-          <p className="text-slate-400">AI Agent as a Service</p>
+          <h1 className="text-4xl font-bold text-white mb-2">SAHJONY</h1>
+          <p className="text-slate-400">AI Agent Platform</p>
         </div>
 
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">

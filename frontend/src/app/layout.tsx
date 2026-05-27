@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Hermes Agent SaaS",
-  description: "Multi-user AI Agent Platform powered by hermes-agent",
+  title: "SAHJONY - AI Agent Platform",
+  description: "Multi-user AI Agent Platform powered by SAHJONY",
 };
 
 export default function RootLayout({

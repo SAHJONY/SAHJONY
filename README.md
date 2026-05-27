@@ -1,10 +1,10 @@
-# Hermes Agent SaaS
+# SAHJONY
 
-**Multi-user AI Agent Platform** powered by hermes-agent with a modern web interface.
+**Multi-user AI Agent Platform** powered by SAHJONY with a modern web interface.
 
 ## Overview
 
-This is a full-stack SaaS application that allows multiple users to create and manage AI agents, have conversations, and access hermes-agent capabilities via API.
+This is a full-stack SaaS application that allows multiple users to create and manage AI agents, have conversations, and access SAHJONY capabilities via API.
 
 ### Architecture
 
@@ -33,8 +33,8 @@ This is a full-stack SaaS application that allows multiple users to create and m
          ┌────────────┼────────────┐
          │            │            │
     ┌────▼────┐  ┌────▼────┐  ┌────▼────┐
-    │ Supabase│  │ hermes- │  │ OpenAI  │
-    │ Postgres│  │ agent   │  │ APIs    │
+    │ Supabase│  │ SAHJONY │  │ OpenAI  │
+    │ Postgres│  │ Engine  │  │ APIs    │
     └─────────┘  └─────────┘  └─────────┘
 ```
 
@@ -51,7 +51,7 @@ This is a full-stack SaaS application that allows multiple users to create and m
 - **Backend**: Python 3.11+ / FastAPI / WebSockets
 - **Frontend**: Next.js 15 / TypeScript / Tailwind CSS / shadcn/ui
 - **Database**: Supabase (PostgreSQL + Auth + RLS)
-- **AI Engine**: hermes-agent
+- **AI Engine**: SAHJONY
 - **Deployment**: Vercel (frontend) + Railway/Render (backend)
 
 ## Project Structure
