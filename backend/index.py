@@ -26,45 +26,86 @@ os.environ['SUPABASE_SERVICE_ROLE_KEY'] = SUPABASE_SERVICE_ROLE_KEY
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Try importing from app
-HAS_FULL_BACKEND = False
-
+# Try importing config
 try:
     from app.config import settings
-    HAS_FULL_BACKEND = True
-    sys.stderr.write("Config loaded successfully\n")
+    sys.stderr.write("Config loaded\n")
 except Exception as e:
-    sys.stderr.write(f"Config import failed: {type(e).__name__}: {e}\n")
-    HAS_FULL_BACKEND = False
+    sys.stderr.write(f"Config failed: {type(e).__name__}: {e}\n")
+    settings = None
 
-# Try importing routers individually
-loaded_routers = []
+# Try importing routers - hardcoded one at a time to find issues
+routers = []
+router_names = []
 
-if HAS_FULL_BACKEND:
-    router_imports = [
-        ('auth', 'auth_router'),
-        ('agents', 'agents_router'),
-        ('conversations', 'conversations_router'),
-        ('chat', 'chat_router'),
-        ('keys', 'keys_router'),
-        ('support', 'support_router'),
-        ('admin', 'admin_router'),
-        ('twenty', 'twenty_router'),
-    ]
-    
-    for module_name, router_name in router_imports:
-        try:
-            module = __import__(f'app.routes.{module_name}', fromlist=[router_name])
-            router = getattr(module, router_name)
-            loaded_routers.append(router)
-            sys.stderr.write(f"Loaded router: {router_name}\n")
-        except Exception as e:
-            sys.stderr.write(f"Router {router_name} failed: {type(e).__name__}: {e}\n")
+try:
+    from app.routes.auth import router as auth_r
+    routers.append(auth_r)
+    router_names.append('auth')
+    sys.stderr.write("Auth loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Auth failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.agents import router as agents_r
+    routers.append(agents_r)
+    router_names.append('agents')
+    sys.stderr.write("Agents loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Agents failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.conversations import router as conv_r
+    routers.append(conv_r)
+    router_names.append('conversations')
+    sys.stderr.write("Conversations loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Conversations failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.chat import router as chat_r
+    routers.append(chat_r)
+    router_names.append('chat')
+    sys.stderr.write("Chat loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Chat failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.keys import router as keys_r
+    routers.append(keys_r)
+    router_names.append('keys')
+    sys.stderr.write("Keys loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Keys failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.support import router as support_r
+    routers.append(support_r)
+    router_names.append('support')
+    sys.stderr.write("Support loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Support failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.admin import router as admin_r
+    routers.append(admin_r)
+    router_names.append('admin')
+    sys.stderr.write("Admin loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Admin failed: {type(e).__name__}: {e}\n")
+
+try:
+    from app.routes.twenty_crm import router as twenty_r
+    routers.append(twenty_r)
+    router_names.append('twenty')
+    sys.stderr.write("Twenty loaded\n")
+except Exception as e:
+    sys.stderr.write(f"Twenty failed: {type(e).__name__}: {e}\n")
 
 # Create FastAPI app
 app = FastAPI(
     title="Hermes Agent SaaS API",
-    description="Multi-user AI Agent Platform" if HAS_FULL_BACKEND else "Backend deployment in progress",
+    description="Multi-user AI Agent Platform",
     version="0.1.0",
 )
 
@@ -81,8 +122,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers if loaded
-for router in loaded_routers:
+# Include routers
+for router in routers:
     app.include_router(router, prefix="/api")
 
 @app.get("/")
@@ -91,19 +132,14 @@ async def root():
         "service": "hermes-agent-saas",
         "version": "0.1.0",
         "status": "healthy",
-        "mode": "full" if HAS_FULL_BACKEND else "setup",
-        "routers_loaded": len(loaded_routers),
+        "routers_loaded": router_names,
     }
 
 @app.get("/health")
 async def health():
     return {
-        "status": "healthy" if HAS_FULL_BACKEND else "degraded",
-        "mode": "full" if HAS_FULL_BACKEND else "setup",
-        "components": {
-            "api": "healthy",
-            "database": "configured" if SUPABASE_URL else "missing"
-        }
+        "status": "healthy",
+        "routers": router_names,
     }
 
 @app.get("/api")
@@ -111,7 +147,5 @@ async def api_info():
     return {
         "name": "Hermes Agent SaaS API",
         "version": "0.1.0",
-        "status": "operational" if HAS_FULL_BACKEND else "setup_required",
-        "endpoints": ["/api/auth", "/api/agents", "/api/conversations", "/api/chat", "/api/keys", "/api/support", "/api/admin", "/api/twenty"] if HAS_FULL_BACKEND else [],
-        "frontend_url": FRONTEND_URL,
+        "loaded_routers": router_names,
     }
