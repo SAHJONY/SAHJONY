@@ -28,30 +28,38 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Try importing from app
 HAS_FULL_BACKEND = False
-app_components = {}
 
 try:
     from app.config import settings
-    app_components['config'] = settings
     HAS_FULL_BACKEND = True
+    sys.stderr.write("Config loaded successfully\n")
 except Exception as e:
     sys.stderr.write(f"Config import failed: {type(e).__name__}: {e}\n")
-    from app.config import Settings
-    settings = Settings()
-    app_components['config'] = settings
+    HAS_FULL_BACKEND = False
 
 # Try importing routers individually
-router_names = ['auth', 'agents', 'conversations', 'chat', 'keys', 'support', 'admin', 'twenty']
 loaded_routers = []
 
 if HAS_FULL_BACKEND:
-    for name in router_names:
+    router_imports = [
+        ('auth', 'auth_router'),
+        ('agents', 'agents_router'),
+        ('conversations', 'conversations_router'),
+        ('chat', 'chat_router'),
+        ('keys', 'keys_router'),
+        ('support', 'support_router'),
+        ('admin', 'admin_router'),
+        ('twenty', 'twenty_router'),
+    ]
+    
+    for module_name, router_name in router_imports:
         try:
-            from app.routes import globals()[f'{name}_router']
-            loaded_routers.append(globals()[f'{name}_router'])
-            sys.stderr.write(f"Loaded router: {name}\n")
+            module = __import__(f'app.routes.{module_name}', fromlist=[router_name])
+            router = getattr(module, router_name)
+            loaded_routers.append(router)
+            sys.stderr.write(f"Loaded router: {router_name}\n")
         except Exception as e:
-            sys.stderr.write(f"Router {name} failed: {type(e).__name__}: {e}\n")
+            sys.stderr.write(f"Router {router_name} failed: {type(e).__name__}: {e}\n")
 
 # Create FastAPI app
 app = FastAPI(
