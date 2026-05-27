@@ -32,9 +32,11 @@ try:
         chat_router, keys_router, support_router, admin_router, twenty_router
     )
     HAS_FULL_BACKEND = True
+    print(f"Successfully loaded backend with {len([auth_router, agents_router, conversations_router, chat_router, keys_router, support_router, admin_router, twenty_router])} routers")
 except Exception as e:
     HAS_FULL_BACKEND = False
     settings = None
+    print(f"Failed to load full backend: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -80,7 +82,7 @@ if HAS_FULL_BACKEND:
 async def root():
     if HAS_FULL_BACKEND:
         return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy"}
-    return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy", "mode": "minimal"}
+    return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy", "mode": "minimal", "debug": str(sys.path)}
 
 @app.get("/health")
 async def health():
