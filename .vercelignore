@@ -1,0 +1,8 @@
+# Exclude everything except backend and api
+*
+
+# But include these specific paths
+!backend/**
+!api/**
+!vercel.json
+!requirements.txt
