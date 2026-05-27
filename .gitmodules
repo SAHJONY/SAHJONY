@@ -1,0 +1,3 @@
+[submodule "third-party/twenty"]
+	path = third-party/twenty
+	url = https://github.com/twentyhq/twenty.git
