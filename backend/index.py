@@ -1,6 +1,6 @@
 """
 Vercel Python Serverless Function wrapper for FastAPI backend
-Full backend with auth endpoints - Supabase confirmed working
+Working version without EmailStr to avoid pydantic validation issues
 """
 import os
 import sys
@@ -10,26 +10,21 @@ sys.path.insert(0, os.path.dirname(__file__))
 # Environment variables
 SUPABASE_URL = os.getenv('SUPABASE_URL', '')
 FRONTEND_URL = os.getenv('FRONTEND_URL', '*')
-JWT_SECRET = os.getenv('JWT_SECRET', 'dev-secret-change-in-production')
+JWT_SECRET = os.getenv('JWT_SECRET', 'dev-secret')
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
 
 os.environ['SUPABASE_URL'] = SUPABASE_URL
 os.environ['FRONTEND_URL'] = FRONTEND_URL
-os.environ['JWT_SECRET'] = JWT_SECRET
 os.environ['SUPABASE_ANON_KEY'] = SUPABASE_ANON_KEY
 os.environ['SUPABASE_SERVICE_ROLE_KEY'] = SUPABASE_SERVICE_ROLE_KEY
 
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
-app = FastAPI(
-    title="Hermes Agent SaaS API",
-    description="Multi-user AI Agent Platform",
-    version="0.1.0",
-)
+app = FastAPI(title="Hermes Agent SaaS API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,7 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Supabase client
+# Supabase clients
 supabase_admin = None
 supabase_anon = None
 supabase_status = "not_configured"
@@ -53,14 +48,14 @@ if SUPABASE_URL and SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY:
     except Exception as e:
         supabase_status = f"error: {str(e)[:50]}"
 
-# Auth models
+# Simple auth models - no EmailStr validation
 class SignUpRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     display_name: Optional[str] = None
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 @app.get("/")
@@ -68,38 +63,35 @@ async def root():
     return {
         "service": "hermes-agent-saas",
         "status": "operational" if supabase_admin else "degraded",
-        "version": "0.1.0",
         "supabase_status": supabase_status
     }
 
 @app.get("/health")
 async def health():
-    return {
-        "status": "healthy" if supabase_admin else "degraded",
-        "supabase_status": supabase_status
-    }
+    return {"status": "healthy" if supabase_admin else "degraded", "supabase_status": supabase_status}
 
 @app.get("/api")
 async def api_info():
     return {
         "name": "Hermes Agent SaaS API",
-        "version": "0.1.0",
         "status": "operational" if supabase_admin else "degraded",
-        "endpoints": {
-            "auth": "/api/auth/signup, /api/auth/login, /api/auth/me",
-            "agents": "/api/agents (when router imports work)",
-            "conversations": "/api/conversations (when router imports work)"
-        }
+        "endpoints": ["signup", "login", "me"]
     }
 
 @app.get("/api/health")
 async def api_health():
-    return {"status": "healthy" if supabase_admin else "degraded", "supabase_status": supabase_status}
+    return {"status": "healthy" if supabase_admin else "degraded"}
 
 @app.post("/api/auth/signup")
 async def signup(request: SignUpRequest):
     if not supabase_admin:
         raise HTTPException(status_code=503, detail="Supabase not configured")
+    
+    if not request.email or "@" not in request.email:
+        raise HTTPException(status_code=400, detail="Invalid email format")
+    
+    if len(request.password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
     
     try:
         auth_response = supabase_admin.auth.sign_up(
