@@ -45,10 +45,17 @@ CREATE POLICY "Users can delete own sessions" ON public."Session"
     FOR DELETE USING (auth.uid() = "userId");
 
 -- Policies for public.VerificationToken table
--- Verification tokens are publicly readable (needed for email verification)
--- But users can only delete tokens associated with their user_id (if column exists)
+-- Verification tokens are publicly readable (needed for email verification flow)
+-- Note: VerificationToken doesn't have userId column, only identifier (email), token, expires
 CREATE POLICY "Anyone can view verification tokens" ON public."VerificationToken"
     FOR SELECT USING (true);
 
 -- Note: If you're not using OAuth, you might not have Account entries
 -- The policies still work but won't affect you if the table is empty
+
+-- TO RUN THIS MIGRATION:
+-- 1. Go to https://supabase.com/dashboard/project/rtwwnxipchwgwegtjqco/sql/new
+-- 2. Run: SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+--    to verify actual table names
+-- 3. Adjust table/column names if different from expected
+-- 4. Run the ALTER TABLE and CREATE POLICY statements
