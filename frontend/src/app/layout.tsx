@@ -17,7 +17,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createServerClient();
+  const supabase = await createClient();
 
   return (
     <html lang="en" className="dark">
