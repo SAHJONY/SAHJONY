@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { SessionContextProvider } from "@/components/providers";
 import { cookies } from "next/headers";
 
