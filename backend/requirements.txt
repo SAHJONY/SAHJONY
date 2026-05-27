@@ -1,0 +1,21 @@
+# FastAPI backend for hermes-agent SaaS
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.12
+websockets==12.0
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# Supabase
+supabase==2.8.4
+postgrest-python==0.20.0
+gotrue-python==2.8.0
+
+# hermes-agent (from local path or install from PyPI when available)
+# For now, we'll structure the code to integrate with hermes-agent
+# -e /path/to/hermes-agent
+
+# Utilities
+python-dotenv==1.0.1
+httpx==0.27.2
+hashlib-scrypt==1.0.1

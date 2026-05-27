@@ -1,0 +1,31 @@
+name: Sahjony Code Reviewer
+description: AI-powered code review using Cody and Copilot agents with persistent memory
+ homepage_url: https://sahjony.ai
+callback_urls:
+  - https://sahjony.ai/github/callback
+request_oauth_url: https://sahjony.ai/github/install
+
+# Permissions required
+default_permissions:
+  contents: read
+  pull_requests: write
+  commit_statuses: read
+  repositories: read
+
+# Webhook configuration
+webhook:
+  url: https://sahjony.ai/api/github/webhook
+  token: ENV_GITHUB_WEBHOOK_SECRET
+  active: true
+
+# Events to subscribe to
+events:
+  - pull_request
+  - pull_request_review
+  - pull_request_review_comment
+  - check_run
+  - check_suite
+
+# Optional: identity description shown during installation
+setup_on_update: true
+redirect_url: https://sahjony.ai/github/setup
