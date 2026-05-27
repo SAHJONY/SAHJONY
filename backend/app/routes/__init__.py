@@ -7,6 +7,7 @@ from .keys import router as keys_router
 from .sahjony_agents import router as sahjony_agents_router
 from .support import router as support_router
 from .admin import router as admin_router
+from .twenty_crm import router as twenty_router
 
 __all__ = [
     "auth_router",
@@ -17,4 +18,5 @@ __all__ = [
     "sahjony_agents_router",
     "support_router",
     "admin_router",
+    "twenty_router",
 ]

@@ -17,6 +17,7 @@ from .routes import (
     keys_router,
     support_router,
     admin_router,
+    twenty_router,
 )
 
 # Configure logging
@@ -74,6 +75,7 @@ app.include_router(chat_router, prefix="/api")
 app.include_router(keys_router, prefix="/api")
 app.include_router(support_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
+app.include_router(twenty_router, prefix="/api")
 
 
 @app.get("/")
@@ -128,6 +130,7 @@ async def api_info():
             "api_keys": "/api/keys",
             "support": "/api/support",
             "admin": "/api/admin",
+            "twenty": "/api/twenty",
             "websocket": "/api/ws/chat/{conversation_id}",
             "support_websocket": "/api/ws/support/{session_id}",
         },

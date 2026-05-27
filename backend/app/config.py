@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # Hermes Agent
     hermes_agent_path: Optional[str] = os.getenv("HERMES_AGENT_PATH", None)
     
+    # Twenty CRM Integration
+    twenty_api_url: str = os.getenv("TWENTY_API_URL", "https://api.twenty.com/graphql")
+    twenty_api_key: Optional[str] = os.getenv("TWENTY_API_KEY", None)
+    
     # CORS
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     
