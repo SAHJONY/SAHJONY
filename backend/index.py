@@ -21,7 +21,7 @@ os.environ['JWT_SECRET'] = JWT_SECRET
 os.environ['SUPABASE_ANON_KEY'] = SUPABASE_ANON_KEY
 os.environ['SUPABASE_SERVICE_ROLE_KEY'] = SUPABASE_SERVICE_ROLE_KEY
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -137,7 +137,7 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
 @app.get("/api/auth/me")
-async def me(authorization: Optional[str] = None):
+async def me(authorization: Optional[str] = Header(None)):
     if not SUPABASE_CONFIGURED:
         raise HTTPException(status_code=503, detail="Supabase not configured")
     
