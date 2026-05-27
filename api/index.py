@@ -5,8 +5,8 @@ This bridges the FastAPI app to Vercel's serverless environment
 import os
 import sys
 
-# Add the backend directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+# Add the repo root directory to the path (parent of backend and api)
+sys.path.insert(0, os.path.dirname(__file__))
 
 # Set environment variables from Vercel if not already set
 # This ensures os.getenv() in config.py works correctly
@@ -25,8 +25,8 @@ if 'DEBUG' not in os.environ:
 
 # Import the FastAPI app from main
 try:
-    from main import app
-    from main import health_check, root, api_info
+    import backend.main as main_module
+    app = main_module.app
     
     # Export the handlers
     handler = app
