@@ -54,8 +54,9 @@ export default function AdminAnnouncementsPage() {
     { id: 'TICKET-0003', customer_id: 'user_003', customer_email: 'alex.rivera@startup.co', subject: 'Agent not responding', description: 'My AI agent stopped responding to messages', status: 'in_progress', priority: 'medium', created_at: '2025-01-25T16:00:00Z', assigned_to: 'sahjonycapitalllc@outlook.com', resolved_at: null }
   ])
 
-  const priorityColors = {
+  const priorityColors: Record<string, string> = {
     low: 'bg-slate-500/20 text-slate-400',
+    medium: 'bg-blue-500/20 text-blue-400',
     normal: 'bg-blue-500/20 text-blue-400',
     high: 'bg-amber-500/20 text-amber-400',
     critical: 'bg-rose-500/20 text-rose-400'
