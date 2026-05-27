@@ -25,6 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 # Try importing from backend.app directly
+import sys
 try:
     from backend.app.config import settings
     from backend.app.routes import (
@@ -32,11 +33,15 @@ try:
         chat_router, keys_router, support_router, admin_router, twenty_router
     )
     HAS_FULL_BACKEND = True
-    print(f"Successfully loaded backend with {len([auth_router, agents_router, conversations_router, chat_router, keys_router, support_router, admin_router, twenty_router])} routers")
+    sys.stderr.write(f"DEBUG: Successfully loaded backend routers\n")
 except Exception as e:
     HAS_FULL_BACKEND = False
     settings = None
-    print(f"Failed to load full backend: {e}")
+    sys.stderr.write(f"DEBUG: Import failed: {type(e).__name__}: {e}\n")
+    sys.stderr.write(f"DEBUG: sys.path = {sys.path}\n")
+    import os
+    sys.stderr.write(f"DEBUG: __file__ = {__file__}\n")
+    sys.stderr.write(f"DEBUG: os.path.dirname(__file__) = {os.path.dirname(__file__)}\n")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -82,7 +87,7 @@ if HAS_FULL_BACKEND:
 async def root():
     if HAS_FULL_BACKEND:
         return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy"}
-    return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy", "mode": "minimal", "debug": str(sys.path)}
+    return {"service": "hermes-agent-saas", "version": "0.1.0", "status": "healthy", "mode": "minimal"}
 
 @app.get("/health")
 async def health():
