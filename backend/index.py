@@ -1,24 +1,22 @@
 """
 Vercel Python Serverless Function wrapper for FastAPI backend
-With direct auth endpoints for testing Supabase connection
+Minimal working version - auth endpoints embedded directly
 """
 import os
 import sys
 
-# Add this directory to path - /var/task on Vercel
+# Add this directory to path
 sys.path.insert(0, os.path.dirname(__file__))
 
-# Set environment variables from Vercel
+# Environment variables
 SUPABASE_URL = os.getenv('SUPABASE_URL', '')
 FRONTEND_URL = os.getenv('FRONTEND_URL', '*')
-DEBUG = os.getenv('DEBUG', 'false').lower() == 'true'
 JWT_SECRET = os.getenv('JWT_SECRET', '')
 SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY', '')
 SUPABASE_SERVICE_ROLE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
 
 os.environ['SUPABASE_URL'] = SUPABASE_URL
 os.environ['FRONTEND_URL'] = FRONTEND_URL
-os.environ['DEBUG'] = 'true' if DEBUG else 'false'
 os.environ['JWT_SECRET'] = JWT_SECRET
 os.environ['SUPABASE_ANON_KEY'] = SUPABASE_ANON_KEY
 os.environ['SUPABASE_SERVICE_ROLE_KEY'] = SUPABASE_SERVICE_ROLE_KEY
@@ -30,7 +28,7 @@ from typing import Optional
 
 app = FastAPI(
     title="Hermes Agent SaaS API",
-    description="Multi-user AI Agent Platform - Backend API",
+    description="Multi-user AI Agent Platform",
     version="0.1.0",
 )
 
@@ -42,19 +40,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Test Supabase connection
-supabase_client = None
-supabase_status = "not_configured"
+# Config status
+SUPABASE_CONFIGURED = bool(SUPABASE_URL and SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY)
 
-if SUPABASE_URL and SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY:
-    try:
-        from supabase import create_client
-        supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-        supabase_status = "connected"
-    except Exception as e:
-        supabase_status = f"error: {str(e)}"
-
-# Models for auth endpoints
+# Auth models
 class SignUpRequest(BaseModel):
     email: EmailStr
     password: str
@@ -69,16 +58,15 @@ async def root():
     return {
         "service": "hermes-agent-saas",
         "version": "0.1.0",
-        "status": "operational",
-        "supabase_status": supabase_status,
-        "message": "Backend is running with Supabase" if supabase_client else "Backend is running without Supabase"
+        "status": "operational" if SUPABASE_CONFIGURED else "degraded",
+        "supabase_configured": SUPABASE_CONFIGURED
     }
 
 @app.get("/health")
 async def health():
     return {
-        "status": "healthy" if supabase_client else "degraded",
-        "supabase_status": supabase_status
+        "status": "healthy" if SUPABASE_CONFIGURED else "degraded",
+        "supabase_configured": SUPABASE_CONFIGURED
     }
 
 @app.get("/api")
@@ -86,22 +74,28 @@ async def api_info():
     return {
         "name": "Hermes Agent SaaS API",
         "version": "0.1.0",
-        "status": "operational" if supabase_client else "limited",
-        "supabase_status": supabase_status
+        "status": "operational" if SUPABASE_CONFIGURED else "degraded",
+        "endpoints": {
+            "auth": "/api/auth/signup, /api/auth/login, /api/auth/me",
+            "agents": "/api/agents (when configured)",
+            "conversations": "/api/conversations (when configured)"
+        }
     }
 
 @app.get("/api/health")
 async def api_health():
-    return {"status": "healthy" if supabase_client else "degraded", "supabase_status": supabase_status}
+    return {"status": "healthy" if SUPABASE_CONFIGURED else "degraded"}
 
 @app.post("/api/auth/signup")
 async def signup(request: SignUpRequest):
-    """Register a new user."""
-    if not supabase_client:
+    if not SUPABASE_CONFIGURED:
         raise HTTPException(status_code=503, detail="Supabase not configured")
     
     try:
-        auth_response = supabase_client.auth.sign_up(
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        
+        auth_response = supabase.auth.sign_up(
             credentials={"email": request.email, "password": request.password},
             options={"data": {"display_name": request.display_name or request.email.split("@")[0]}}
         )
@@ -119,12 +113,14 @@ async def signup(request: SignUpRequest):
 
 @app.post("/api/auth/login")
 async def login(request: LoginRequest):
-    """Login with email and password."""
-    if not supabase_client:
+    if not SUPABASE_CONFIGURED:
         raise HTTPException(status_code=503, detail="Supabase not configured")
     
     try:
-        auth_response = supabase_client.auth.sign_in_with_password(
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+        
+        auth_response = supabase.auth.sign_in_with_password(
             credentials={"email": request.email, "password": request.password}
         )
         
@@ -141,18 +137,20 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
 @app.get("/api/auth/me")
-async def me(authorization: str = None):
-    """Get current user."""
-    if not supabase_client:
+async def me(authorization: Optional[str] = None):
+    if not SUPABASE_CONFIGURED:
         raise HTTPException(status_code=503, detail="Supabase not configured")
     
     if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+        raise HTTPException(status_code=401, detail="Missing authorization header")
     
     token = authorization.replace("Bearer ", "")
     
     try:
-        user = supabase_client.auth.get_user(token)
+        from supabase import create_client
+        supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        user = supabase.auth.get_user(token)
+        
         if not user.user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
@@ -163,17 +161,3 @@ async def me(authorization: str = None):
         }
     except Exception as e:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-# Try to load full routers from app.routes
-loaded_routers = []
-try:
-    from app.routes import auth_router, agents_router, conversations_router, chat_router
-    app.include_router(auth_router, prefix="/api")
-    app.include_router(agents_router, prefix="/api")
-    app.include_router(conversations_router, prefix="/api")
-    app.include_router(chat_router, prefix="/api")
-    loaded_routers = ['auth', 'agents', 'conversations', 'chat']
-    sys.stderr.write(f"Full routers loaded: {loaded_routers}\n")
-except Exception as e:
-    sys.stderr.write(f"Router imports failed: {type(e).__name__}: {e}\n")
-    sys.stderr.write("Running with direct auth endpoints only\n")
