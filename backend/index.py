@@ -1,6 +1,6 @@
 """
 Vercel Python Serverless Function wrapper for FastAPI backend
-Robust version with individual router loading and error handling
+With direct auth endpoints for testing Supabase connection
 """
 import os
 import sys
@@ -23,8 +23,10 @@ os.environ['JWT_SECRET'] = JWT_SECRET
 os.environ['SUPABASE_ANON_KEY'] = SUPABASE_ANON_KEY
 os.environ['SUPABASE_SERVICE_ROLE_KEY'] = SUPABASE_SERVICE_ROLE_KEY
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 app = FastAPI(
     title="Hermes Agent SaaS API",
@@ -34,75 +36,49 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL] if FRONTEND_URL != '*' else ["*"],
+    allow_origins=["*"] if FRONTEND_URL == "*" else [FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Track mode and loaded routers
-MODE = "minimal"
-loaded_routers = []
-config_status = {"loaded": False, "error": None}
+# Test Supabase connection
+supabase_client = None
+supabase_status = "not_configured"
 
-# Step 1: Try loading config
-try:
-    from app.config import settings
-    config_status["loaded"] = True
-    sys.stderr.write(f"Config loaded: supabase_url={settings.supabase_url[:30]}...\n")
-except Exception as e:
-    config_status["error"] = f"{type(e).__name__}: {e}"
-    sys.stderr.write(f"Config import failed: {config_status['error']}\n")
+if SUPABASE_URL and SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY:
+    try:
+        from supabase import create_client
+        supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        supabase_status = "connected"
+    except Exception as e:
+        supabase_status = f"error: {str(e)}"
 
-# Step 2: Load routers individually
-router_configs = [
-    ('auth', 'auth_router', '/auth'),
-    ('agents', 'agents_router', '/agents'),
-    ('conversations', 'conversations_router', '/conversations'),
-    ('chat', 'chat_router', '/chat'),
-    ('keys', 'keys_router', '/keys'),
-    ('support', 'support_router', '/support'),
-    ('admin', 'admin_router', '/admin'),
-    ('twenty', 'twenty_router', '/twenty'),
-]
+# Models for auth endpoints
+class SignUpRequest(BaseModel):
+    email: EmailStr
+    password: str
+    display_name: Optional[str] = None
 
-for module_name, router_name, prefix in router_configs:
-    if config_status["loaded"]:
-        try:
-            module = __import__(f'app.routes.{module_name}', fromlist=[router_name])
-            router = getattr(module, router_name)
-            app.include_router(router, prefix="/api")
-            loaded_routers.append(module_name)
-            sys.stderr.write(f"Loaded router: {module_name}\n")
-        except Exception as e:
-            sys.stderr.write(f"Router {module_name} failed: {type(e).__name__}: {e}\n")
-
-# Update mode based on what loaded
-if config_status["loaded"] and len(loaded_routers) > 0:
-    MODE = "full"
-    sys.stderr.write(f"Backend running in FULL mode with {len(loaded_routers)} routers\n")
-else:
-    sys.stderr.write(f"Backend running in MINIMAL mode - config_status: {config_status}, loaded: {len(loaded_routers)}\n")
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 @app.get("/")
 async def root():
     return {
         "service": "hermes-agent-saas",
         "version": "0.1.0",
-        "status": "healthy" if MODE == "full" else "degraded",
-        "mode": MODE,
-        "loaded_routers": loaded_routers,
-        "message": "Backend is running" if MODE == "full" else f"Backend is running in minimal mode - {len(loaded_routers)} routers loaded, full functionality requires Supabase configuration"
+        "status": "operational",
+        "supabase_status": supabase_status,
+        "message": "Backend is running with Supabase" if supabase_client else "Backend is running without Supabase"
     }
 
 @app.get("/health")
 async def health():
     return {
-        "status": "healthy" if MODE == "full" else "degraded",
-        "mode": MODE,
-        "supabase_configured": bool(SUPABASE_URL and SUPABASE_ANON_KEY),
-        "loaded_routers": loaded_routers,
-        "config_loaded": config_status["loaded"]
+        "status": "healthy" if supabase_client else "degraded",
+        "supabase_status": supabase_status
     }
 
 @app.get("/api")
@@ -110,23 +86,94 @@ async def api_info():
     return {
         "name": "Hermes Agent SaaS API",
         "version": "0.1.0",
-        "status": "operational" if MODE == "full" else "minimal",
-        "mode": MODE,
-        "loaded_routers": loaded_routers,
-        "endpoints": {
-            "health": "/health",
-            "info": "/api",
-            "auth": "/api/auth" if "auth" in loaded_routers else "not_available",
-            "agents": "/api/agents" if "agents" in loaded_routers else "not_available",
-            "conversations": "/api/conversations" if "conversations" in loaded_routers else "not_available",
-            "chat": "/api/chat" if "chat" in loaded_routers else "not_available"
-        }
+        "status": "operational" if supabase_client else "limited",
+        "supabase_status": supabase_status
     }
 
 @app.get("/api/health")
 async def api_health():
-    return {
-        "status": "healthy" if MODE == "full" else "degraded",
-        "mode": MODE,
-        "loaded_routers": loaded_routers
-    }
+    return {"status": "healthy" if supabase_client else "degraded", "supabase_status": supabase_status}
+
+@app.post("/api/auth/signup")
+async def signup(request: SignUpRequest):
+    """Register a new user."""
+    if not supabase_client:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    
+    try:
+        auth_response = supabase_client.auth.sign_up(
+            credentials={"email": request.email, "password": request.password},
+            options={"data": {"display_name": request.display_name or request.email.split("@")[0]}}
+        )
+        
+        if not auth_response.user:
+            raise HTTPException(status_code=400, detail="Failed to create user")
+        
+        return {
+            "user_id": auth_response.user.id,
+            "email": auth_response.user.email,
+            "message": "User registered successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/api/auth/login")
+async def login(request: LoginRequest):
+    """Login with email and password."""
+    if not supabase_client:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    
+    try:
+        auth_response = supabase_client.auth.sign_in_with_password(
+            credentials={"email": request.email, "password": request.password}
+        )
+        
+        if not auth_response.session:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        
+        return {
+            "access_token": auth_response.session.access_token,
+            "refresh_token": auth_response.session.refresh_token,
+            "expires_in": auth_response.expires_in,
+            "user": {"id": auth_response.user.id, "email": auth_response.user.email}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+@app.get("/api/auth/me")
+async def me(authorization: str = None):
+    """Get current user."""
+    if not supabase_client:
+        raise HTTPException(status_code=503, detail="Supabase not configured")
+    
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    token = authorization.replace("Bearer ", "")
+    
+    try:
+        user = supabase_client.auth.get_user(token)
+        if not user.user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        return {
+            "id": user.user.id,
+            "email": user.user.email,
+            "display_name": user.user.user_metadata.get("display_name")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+# Try to load full routers from app.routes
+loaded_routers = []
+try:
+    from app.routes import auth_router, agents_router, conversations_router, chat_router
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(agents_router, prefix="/api")
+    app.include_router(conversations_router, prefix="/api")
+    app.include_router(chat_router, prefix="/api")
+    loaded_routers = ['auth', 'agents', 'conversations', 'chat']
+    sys.stderr.write(f"Full routers loaded: {loaded_routers}\n")
+except Exception as e:
+    sys.stderr.write(f"Router imports failed: {type(e).__name__}: {e}\n")
+    sys.stderr.write("Running with direct auth endpoints only\n")
