@@ -6,10 +6,10 @@ websockets==12.0
 pydantic==2.9.2
 pydantic-settings==2.5.2
 
-# Supabase
-supabase==2.8.4
-postgrest-python==0.20.0
-gotrue-python==2.8.0
+# Supabase - allow flexible versions for Vercel compatibility
+supabase>=2.0.0
+postgrest-python>=0.10.0
+gotrue-python>=1.0.0
 
 # hermes-agent (from local path or install from PyPI when available)
 # For now, we'll structure the code to integrate with hermes-agent
