@@ -8,71 +8,45 @@ import sys
 # Add the backend directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+# Set environment variables from Vercel if not already set
+# This ensures os.getenv() in config.py works correctly
+if 'SUPABASE_URL' not in os.environ:
+    os.environ['SUPABASE_URL'] = os.getenv('SUPABASE_URL', '')
+if 'SUPABASE_ANON_KEY' not in os.environ:
+    os.environ['SUPABASE_ANON_KEY'] = os.getenv('SUPABASE_ANON_KEY', '')
+if 'SUPABASE_SERVICE_ROLE_KEY' not in os.environ:
+    os.environ['SUPABASE_SERVICE_ROLE_KEY'] = os.getenv('SUPABASE_SERVICE_ROLE_KEY', '')
+if 'JWT_SECRET' not in os.environ:
+    os.environ['JWT_SECRET'] = os.getenv('JWT_SECRET', 'dev-secret-change-in-production')
+if 'FRONTEND_URL' not in os.environ:
+    os.environ['FRONTEND_URL'] = os.getenv('FRONTEND_URL', 'https://frontend-ten-pi-73.vercel.app')
+if 'DEBUG' not in os.environ:
+    os.environ['DEBUG'] = 'false'
 
-# Create FastAPI app for Vercel serverless
-app = FastAPI(title="SAHJONY Backend API")
-
-# CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Import and include the actual backend routes
+# Import the FastAPI app from main
 try:
-    from app.routes import auth, health, appointments, messages, knowledge_base, admin, twenty_crm
-    from app.config import settings
+    from main import app
+    from main import health_check, root, api_info
     
-    # Include all routers
-    app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-    app.include_router(health.router, tags=["health"])
-    app.include_router(appointments.router, prefix="/api/appointments", tags=["appointments"])
-    app.include_router(messages.router, prefix="/api/messages", tags=["messages"])
-    app.include_router(knowledge_base.router, prefix="/api/knowledge", tags=["knowledge"])
-    app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
-    app.include_router(twenty_crm.router, prefix="/api/twenty", tags=["twenty"])
+    # Export the handlers
+    handler = app
     
-    BACKEND_LOADED = True
 except Exception as e:
-    BACKEND_LOADED = False
-    LOAD_ERROR = str(e)
-
-@app.get("/")
-async def root():
-    if BACKEND_LOADED:
-        return {
-            "status": "running",
-            "service": "SAHJONY Backend API",
-            "version": "1.0.0",
-            "endpoints": {
-                "health": "/health",
-                "auth": "/api/auth",
-                "appointments": "/api/appointments",
-                "messages": "/api/messages",
-                "knowledge": "/api/knowledge",
-                "admin": "/api/admin",
-                "twenty_crm": "/api/twenty"
-            }
-        }
-    else:
+    # If import fails, create a minimal app that shows the error
+    from fastapi import FastAPI
+    app = FastAPI(title="SAHJONY Backend - Error")
+    
+    @app.get("/")
+    async def error_root():
         return {
             "status": "error",
-            "message": "Backend not loaded",
-            "error": LOAD_ERROR if not BACKEND_LOADED else None
+            "message": "Failed to load backend module",
+            "error": str(e),
+            "hint": "Check that all environment variables are configured in Vercel dashboard"
         }
-
-@app.get("/api")
-async def api_info():
-    return {
-        "name": "SAHJONY Backend API",
-        "version": "1.0.0",
-        "documentation": "/docs" if BACKEND_LOADED else None
-    }
-
-# For Vercel serverless - export the app
-handler = app
+    
+    @app.get("/health")
+    async def error_health():
+        return {"status": "error", "message": str(e)}
+    
+    handler = app
