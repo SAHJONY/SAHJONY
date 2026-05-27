@@ -2,6 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
+  
+  if (!supabase) {
+    return new Response(JSON.stringify({ error: 'Service not configured' }), { status: 503 })
+  }
+
   const { agentId } = await request.json()
 
   const { data: { user } } = await supabase.auth.getUser()
