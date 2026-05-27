@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description: "Multi-user AI Agent Platform powered by hermes-agent",
 };
 
+// Force dynamic rendering to avoid SSR pre-rendering issues with Supabase
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: {
