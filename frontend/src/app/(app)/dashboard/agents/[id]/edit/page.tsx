@@ -18,21 +18,8 @@ export default function EditAgentPage() {
 
   useEffect(() => {
     if (!supabase) {
-      // Mock data for demo when Supabase not configured
-      setAgent({
-        id: agentId,
-        user_id: 'demo-user',
-        name: 'Demo Agent',
-        description: 'This is a demo agent',
-        model_provider: 'openai',
-        model_name: 'gpt-4o',
-        system_prompt: 'You are a helpful assistant.',
-        config: {},
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      setLoading(false)
+      // Redirect to login if Supabase not configured
+      router.push('/login')
       return
     }
 

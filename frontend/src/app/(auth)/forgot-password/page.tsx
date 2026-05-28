@@ -7,10 +7,10 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
@@ -27,22 +27,50 @@ export default function LoginPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) {
         setError(error.message)
       } else {
-        router.push('/dashboard')
-        router.refresh()
+        setSuccess(true)
       }
     } catch (err) {
       setError('An unexpected error occurred')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+        <div className="w-full max-w-md">
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-semibold text-white mb-2">Check your email</h2>
+              <p className="text-slate-400">
+                We sent a password reset link to <span className="text-indigo-400">{email}</span>
+              </p>
+            </div>
+            <p className="text-sm text-slate-500 mb-6">
+              If you don't see the email, check your spam folder.
+            </p>
+            <Link href="/login">
+              <Button variant="secondary" className="w-full">
+                Back to Sign in
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -54,7 +82,10 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-700/50 shadow-2xl">
-          <h2 className="text-2xl font-semibold text-white mb-6">Welcome back</h2>
+          <h2 className="text-2xl font-semibold text-white mb-2">Reset your password</h2>
+          <p className="text-slate-400 text-sm mb-6">
+            Enter your email and we'll send you a reset link
+          </p>
 
           {error && (
             <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
@@ -78,36 +109,15 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                Password
-              </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
-              />
-            </div>
-
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? 'Sending...' : 'Send reset link'}
             </Button>
           </form>
 
-          <div className="text-right mt-2">
-            <Link href="/forgot-password" className="text-sm text-indigo-400 hover:text-indigo-300">
-              Forgot password?
-            </Link>
-          </div>
-
           <p className="mt-6 text-center text-sm text-slate-400">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-indigo-400 hover:text-indigo-300">
-              Sign up
+            Remember your password?{' '}
+            <Link href="/login" className="text-indigo-400 hover:text-indigo-300">
+              Sign in
             </Link>
           </p>
         </div>

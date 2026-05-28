@@ -1,31 +1,63 @@
 import { cn } from "@/lib/utils";
-import { forwardRef, InputHTMLAttributes } from "react";
+import { forwardRef, InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import { AlertCircle } from "lucide-react";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  icon?: ReactNode;
+  iconPosition?: "left" | "right";
+  variant?: "default" | "filled" | "ghost";
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, ...props }, ref) => {
+  ({ className, label, error, icon, iconPosition = "left", variant = "default", type, ...props }, ref) => {
+    const variants = {
+      default: "bg-surface border-border focus:border-primary focus:shadow-glow-sm",
+      filled: "bg-surface-elevated/50 border-border/50 focus:bg-surface-elevated focus:border-primary",
+      ghost: "bg-transparent border-transparent focus:border-primary/50",
+    };
+
     return (
-      <div className="space-y-1">
+      <div className="w-full">
         {label && (
-          <label className="text-sm font-medium text-zinc-300">
+          <label className="block text-sm font-medium text-text-secondary mb-2">
             {label}
           </label>
         )}
-        <input
-          ref={ref}
-          className={cn(
-            "w-full h-10 px-3 bg-surface border border-border rounded-md text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors",
-            error && "border-error focus:ring-error",
-            className
+        <div className="relative">
+          {icon && iconPosition === "left" && (
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">
+              {icon}
+            </div>
           )}
-          {...props}
-        />
+          <input
+            ref={ref}
+            type={type}
+            className={cn(
+              "w-full px-4 py-3.5 rounded-xl text-white text-sm transition-all duration-300",
+              "placeholder:text-text-tertiary",
+              "focus:outline-none focus:ring-2 focus:ring-primary/30",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              icon && iconPosition === "left" && "pl-12",
+              icon && iconPosition === "right" && "pr-12",
+              variants[variant],
+              error && "border-error focus:border-error focus:ring-error/30",
+              className
+            )}
+            {...props}
+          />
+          {icon && iconPosition === "right" && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary">
+              {icon}
+            </div>
+          )}
+        </div>
         {error && (
-          <p className="text-sm text-error">{error}</p>
+          <div className="flex items-center gap-2 mt-2 text-error text-xs">
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>{error}</span>
+          </div>
         )}
       </div>
     );
@@ -34,33 +66,45 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = "Input";
 
-export { Input };
-
-export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
+  variant?: "default" | "filled" | "ghost";
 }
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, label, error, ...props }, ref) => {
+  ({ className, label, error, variant = "default", ...props }, ref) => {
+    const variants = {
+      default: "bg-surface border-border focus:border-primary focus:shadow-glow-sm",
+      filled: "bg-surface-elevated/50 border-border/50 focus:bg-surface-elevated focus:border-primary",
+      ghost: "bg-transparent border-transparent focus:border-primary/50",
+    };
+
     return (
-      <div className="space-y-1">
+      <div className="w-full">
         {label && (
-          <label className="text-sm font-medium text-zinc-300">
+          <label className="block text-sm font-medium text-text-secondary mb-2">
             {label}
           </label>
         )}
         <textarea
           ref={ref}
           className={cn(
-            "w-full min-h-[100px] px-3 py-2 bg-surface border border-border rounded-md text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none",
-            error && "border-error focus:ring-error",
+            "w-full px-4 py-3.5 rounded-xl text-white text-sm transition-all duration-300 resize-none",
+            "placeholder:text-text-tertiary",
+            "focus:outline-none focus:ring-2 focus:ring-primary/30",
+            "disabled:opacity-50 disabled:cursor-not-allowed",
+            variants[variant],
+            error && "border-error focus:border-error focus:ring-error/30",
             className
           )}
           {...props}
         />
         {error && (
-          <p className="text-sm text-error">{error}</p>
+          <div className="flex items-center gap-2 mt-2 text-error text-xs">
+            <AlertCircle className="w-3.5 h-3.5" />
+            <span>{error}</span>
+          </div>
         )}
       </div>
     );
@@ -69,4 +113,4 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 
 Textarea.displayName = "Textarea";
 
-export { Textarea };
+export { Input, Textarea };

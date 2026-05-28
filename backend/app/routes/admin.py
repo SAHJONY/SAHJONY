@@ -27,11 +27,23 @@ from ..services.sahjony_brain import sahjony_brain
 router = APIRouter(prefix="/api/admin", tags=["SAHJONY Admin"])
 
 # ============================================================================
-# Admin Credentials (In production, use secure environment variables or vault)
+# Admin Credentials - Loaded from Environment Variables
+# SECURITY: Credentials are never hardcoded. Must be set in production env.
 # ============================================================================
 
-ADMIN_EMAIL = "sahjonycapitalllc@outlook.com"
-ADMIN_PASSWORD_HASH = hashlib.sha256("Primelles208#".encode()).hexdigest()
+import os
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+
+# Fail securely if credentials are not configured
+if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+    raise RuntimeError(
+        "Admin credentials not configured. "
+        "Set ADMIN_EMAIL and ADMIN_PASSWORD environment variables."
+    )
+
+ADMIN_PASSWORD_HASH = hashlib.sha256(ADMIN_PASSWORD.encode()).hexdigest()
 
 # In-memory admin sessions (in production, use Redis or database)
 _admin_sessions: Dict[str, Dict[str, Any]] = {}
@@ -176,7 +188,8 @@ async def admin_login(credentials: AdminLoginRequest):
     password_hash = hash_password(credentials.password)
     
     if credentials.email != ADMIN_EMAIL or password_hash != ADMIN_PASSWORD_HASH:
-        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+        # Use generic error message to prevent enumeration attacks
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     
     # Generate session token
     session_token = generate_session_token()

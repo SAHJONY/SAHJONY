@@ -18,7 +18,7 @@ export function AgentCard({ agent, onDelete }: AgentCardProps) {
   return (
     <div className="group relative bg-surface border border-border rounded-lg p-4 hover:border-primary/50 transition-colors">
       <div className="flex items-start justify-between">
-        <Link href={`/agents/${agent.id}`} className="flex items-center gap-3 flex-1">
+        <Link href={`/dashboard/agents/${agent.id}/edit`} className="flex items-center gap-3 flex-1">
           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Bot className="w-5 h-5 text-white" />
           </div>
