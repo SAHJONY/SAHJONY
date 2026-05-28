@@ -1,20 +1,33 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TopNav } from '@/components/layout/top-nav'
 import { Sidebar } from '@/components/layout/sidebar'
+
+// Routes that don't require authentication
+const publicRoutes = ['/landing', '/pricing']
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
+
+  // Check if current route is public (exact match)
+  const isPublicRoute = publicRoutes.includes(pathname || '')
 
   useEffect(() => {
     // If supabase is null, skip auth check (for demo/development)
     if (!supabase) {
+      setLoading(false)
+      return
+    }
+
+    // Skip auth check for public routes
+    if (isPublicRoute) {
       setLoading(false)
       return
     }
@@ -32,7 +45,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setLoading(false)
     }
     getUser()
-  }, [router, supabase])
+  }, [router, supabase, isPublicRoute])
 
   if (loading) {
     return (
